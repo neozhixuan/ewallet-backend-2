@@ -1,20 +1,31 @@
 const express = require("express");
-const { WalletService, CreateItems } = require("../services/WalletService.js");
+const {
+  getWalletData,
+  top_up_wallet,
+  withdraw_from_wallet,
+  pay_to_user,
+  add_new_user_account,
+  delete_data,
+  add_new_wallet,
+} = require("../dao/WalletService.js");
 const router = express.Router();
 const dotenv = require("dotenv");
 const stripe = require("stripe")(process.env.STRIPE_KEY);
 dotenv.config();
+//-------------------------------------------------------------//
+// All the API Routes
+router.route("/wallet").post(getWalletData);
 
-router.get("/get-account", async (req, res) => {
-  let result = await WalletService.getWalletData(process.env.USER);
+router.route("/top-up-wallet").post(top_up_wallet);
 
-  res.send(result);
-});
+router.route("/withdraw").post(withdraw_from_wallet);
 
-router
-  .route("/user")
-  .post(CreateItems.add_new_user_account)
-  .delete(WalletService.delete_data);
+router.route("/pay").post(pay_to_user);
+
+router.route("/user").post(add_new_user_account).delete(delete_data);
+
+router.route("/add-wallet").post(add_new_wallet);
+//-------------------------------------------------------------//
 
 router.post("/create-payment-intent", async (req, res) => {
   const { amount } = req.body;
