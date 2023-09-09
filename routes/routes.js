@@ -8,12 +8,14 @@ const {
   delete_data,
   add_new_wallet,
 } = require("../dao/WalletService.js");
+
+const {
+  createPaymentIntent,
+  createPayout,
+} = require("../dao/StripeService.js");
 const router = express.Router();
-const dotenv = require("dotenv");
-const stripe = require("stripe")(process.env.STRIPE_KEY);
-dotenv.config();
 //-------------------------------------------------------------//
-// All the API Routes
+// All the Wallet API Routes
 router.route("/wallet").post(getWalletData);
 
 router.route("/top-up-wallet").post(top_up_wallet);
@@ -26,16 +28,9 @@ router.route("/user").post(add_new_user_account).delete(delete_data);
 
 router.route("/add-wallet").post(add_new_wallet);
 //-------------------------------------------------------------//
+// All the Stripe API Routes
+router.route("/create-payment-intent").post(createPaymentIntent);
 
-router.post("/create-payment-intent", async (req, res) => {
-  const { amount } = req.body;
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amount,
-    currency: "sgd",
-  });
-  res.send({
-    clientSecret: paymentIntent.client_secret,
-  });
-});
-
+router.route("/withdraw").post(createPayout);
+//-------------------------------------------------------------//
 module.exports = router;
