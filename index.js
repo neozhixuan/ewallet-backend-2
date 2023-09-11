@@ -2,9 +2,6 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const router = require("./routes/routes.js");
-
-// const WalletService = require("./services/WalletService.js");
-// WalletService.injectDB();
 dotenv.config();
 
 const app = express();

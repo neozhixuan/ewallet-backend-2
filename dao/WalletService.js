@@ -1,15 +1,11 @@
 const { initializeApp, cert } = require("firebase-admin/app");
-const serviceAccount = require("../secrets/serviceAccount.json");
 const { getFirestore } = require("firebase-admin/firestore");
+const { generateUniqueUserID } = require("../utils/utils.js");
+const dotenv = require("dotenv");
+dotenv.config();
 // -------------------- PRIVATE/GENERAL FUNCTIONS ------------------- //
-function generateUniqueUserID() {
-  // Logic to generate a unique ID (e.g., timestamp + random characters)
-  const timestamp = Date.now();
-  const randomChars = Math.random().toString(36).substring(2, 10);
-  return `${timestamp}_${randomChars}`;
-}
 // Function to generate a unique user ID
-async function isUsernameTaken(username) {
+async function _isUsernameTaken(username) {
   try {
     const collectionRef = db.collection("users");
     const query = await collectionRef.where("username", "==", username).get(); // Execute the query
@@ -47,9 +43,24 @@ async function _create_transaction(
   }
 }
 // ------------------------------------------------------------------- //
+const serviceAccount = {
+  type: process.env.TYPE,
+  project_id: process.env.PROJECTID,
+  private_key_id: process.env.PRIVATEKEYID,
+  private_key: process.env.PRIVATEKEY.replace(/\\n/g, "\n"),
+  client_email: process.env.CLIENTEMAIL,
+  client_id: process.env.CLIENTID,
+  auth_uri: process.env.AUTHURI,
+  token_uri: process.env.TOKENURI,
+  auth_provider_x509_cert_url: process.env.AUTHPROVIDERCERTURL,
+  client_x509_cert_url: process.env.CLIENTCERTURL,
+  universe_domain: process.env.UNIVERSEDOMAIN,
+};
+
 const firebaseApp = initializeApp({
   credential: cert(serviceAccount),
 });
+
 const db = getFirestore(firebaseApp);
 // ------------------------------------------------------------------- //
 async function getWalletData(req, res, next) {
@@ -265,7 +276,7 @@ async function add_new_user_account(req, res, next) {
     const email = req.body.email;
 
     // Generate a unique user_id
-    const user_id = generateUniqueUserID();
+    const user_id = generateUniqueUserID;
 
     // Create a new user_account object with provided details
     const user_account = {
@@ -278,7 +289,7 @@ async function add_new_user_account(req, res, next) {
       email: email,
     };
 
-    if (await isUsernameTaken(username)) {
+    if (await _isUsernameTaken(username)) {
       res.json({
         status: "failure",
         message: "Username is already taken.",
@@ -326,6 +337,75 @@ async function add_new_wallet(req, res, next) {
   }
 }
 
+async function showTransactions(req, res, next) {
+  const userId = req.body.userId;
+  const dateFilter = req.body.dateFilter;
+  let comparedStartDay = new Date();
+  const comparedEndDay = new Date();
+
+  const transactionRef = db.collection("Transactions");
+  let query = transactionRef;
+
+  if (dateFilter) {
+    if (dateFilter == "7-days") {
+      comparedStartDay.setDate(comparedEndDay.getDate() - 7);
+    } else if (dateFilter == "1-month") {
+      comparedStartDay.setMonth(comparedEndDay.getMonth() - 1);
+    } else if (dateFilter == "1-day") {
+      comparedStartDay.setHours(0, 0, 0, 0);
+    }
+    query = transactionRef
+      .where("date", "<=", comparedEndDay)
+      .where("date", ">=", comparedStartDay);
+  }
+  try {
+    const matches = await query.where("user_id", "==", userId).get();
+    const filteredDocuments = [];
+
+    matches.forEach((doc) => {
+      const documentData = doc.data();
+      filteredDocuments.push(documentData);
+    });
+    res.json({
+      status: "success",
+      transactions: filteredDocuments,
+    });
+  } catch (error) {
+    res.json({
+      status: "failure",
+      message: `An error occurred: ${error}`,
+    });
+  }
+}
+
+async function getTransactions(req, res, next) {
+  try {
+    const day = new Date();
+    let comparedStartDay = new Date();
+    comparedStartDay.setDate(day.getDate() - 7);
+    const filteredDocuments = [];
+    const transactions = db
+      .collection("Transactions")
+      .where("date", ">=", comparedStartDay)
+      .where("date", "<=", day);
+
+    const snapshot = transactions.get();
+    (await snapshot).forEach((doc) => {
+      const documentData = doc.data();
+      filteredDocuments.push(documentData);
+    });
+    res.json({
+      status: "success",
+      transactions: filteredDocuments,
+    });
+  } catch (error) {
+    res.json({
+      status: "failure",
+      message: `An error occurred: ${error}`,
+    });
+  }
+}
+
 module.exports = {
   getWalletData,
   top_up_wallet,
@@ -334,4 +414,6 @@ module.exports = {
   add_new_user_account,
   delete_data,
   add_new_wallet,
+  showTransactions,
+  getTransactions,
 };

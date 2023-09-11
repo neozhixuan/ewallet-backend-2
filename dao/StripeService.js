@@ -11,7 +11,7 @@ async function createPaymentIntent(req, res, next) {
   res.json({ status: "Success", clientSecret: paymentIntent.client_secret });
 }
 
-async function createPayout(amount, currency) {
+async function createPayout(req, res, next) {
   const amount = req.body.amount;
   const currency = req.body.currency;
   const destinationDetails = req.body.destinationDetails;

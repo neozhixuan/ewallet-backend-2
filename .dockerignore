@@ -1,3 +1,4 @@
 # Prevent unauthorised usage of keys
 node_modules
+secrets
 .env

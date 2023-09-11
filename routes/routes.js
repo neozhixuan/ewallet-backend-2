@@ -1,4 +1,5 @@
 const express = require("express");
+
 const {
   getWalletData,
   top_up_wallet,
@@ -7,6 +8,8 @@ const {
   add_new_user_account,
   delete_data,
   add_new_wallet,
+  showTransactions,
+  getTransactions,
 } = require("../dao/WalletService.js");
 
 const {
@@ -18,6 +21,8 @@ const router = express.Router();
 // All the Wallet API Routes
 router.route("/wallet").post(getWalletData);
 
+router.route("/show-transactions").post(showTransactions);
+
 router.route("/top-up-wallet").post(top_up_wallet);
 
 router.route("/withdraw").post(withdraw_from_wallet);
@@ -27,10 +32,12 @@ router.route("/pay").post(pay_to_user);
 router.route("/user").post(add_new_user_account).delete(delete_data);
 
 router.route("/add-wallet").post(add_new_wallet);
+router.route("/get-transactions").get(getTransactions);
 //-------------------------------------------------------------//
 // All the Stripe API Routes
 router.route("/create-payment-intent").post(createPaymentIntent);
 
 router.route("/withdraw").post(createPayout);
 //-------------------------------------------------------------//
+
 module.exports = router;
